@@ -6,6 +6,7 @@ import os
 import subprocess
 from xml.dom.minidom import parseString
 
+
 def which(cmd):
     """Python implementation of `which` command."""
     for path in os.environ["PATH"].split(os.pathsep):
@@ -19,33 +20,44 @@ def which(cmd):
                     return full
     return None
 
+
 FACTER = which("facter")
 VMTOOLS = which("vmtoolsd")
 
+
 def facter(*args):
-    facts = json.loads(subprocess.check_output([FACTER, '--json', '--no-external'] + [ arg for arg in args ]))
+    facts = json.loads(
+        subprocess.check_output([FACTER, '--json', '--no-external'] +
+                                [arg for arg in args])
+    )
     return facts
+
 
 def findXmlSection(dom, sectionName):
     sections = dom.getElementsByTagName(sectionName)
     return sections[0]
+
 
 def getOVFProperties(ovfEnv):
     dom = parseString(ovfEnv)
     section = findXmlSection(dom, "PropertySection")
     propertyMap = {}
     for property in section.getElementsByTagName("Property"):
-        key   = property.getAttribute("oe:key")
+        key = property.getAttribute("oe:key")
         value = property.getAttribute("oe:value")
         propertyMap[key] = value
     dom.unlink()
     return propertyMap
 
+
 def getVMWareOvfEnv():
-    if VMTOOLS == None:
+    if VMTOOLS is None:
         raise Exception("VMWare Tools not installed.")
     try:
-        ovf = subprocess.check_output([VMTOOLS, '--cmd', 'info-get guestinfo.ovfenv'], stderr=subprocess.STDOUT)
+        ovf = subprocess.check_output(
+            [VMTOOLS, '--cmd', 'info-get guestinfo.ovfenv'],
+            stderr=subprocess.STDOUT
+        )
         properties = getOVFProperties(ovf)
         print "ovf=true"
         for key, value in properties.iteritems():
@@ -53,6 +65,7 @@ def getVMWareOvfEnv():
     except:
         print "ovf=false"
         return
+
 
 if __name__ == "__main__":
     facts = facter("is_virtual", "virtual")
